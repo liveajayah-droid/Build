@@ -1,13 +1,34 @@
-// Octokit.js
-// https://github.com/octokit/core.js#readme
-const octokit = new Octokit({
-  auth: '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'
-})
+require('dotenv').config();
+const { Octokit } = require("@octokit/rest");
 
-await octokit.request('GET /repos/{owner}/{repo}', {
-  owner: 'liveajayah-droid',
-  repo: 'Build-bot',
-  headers: {
-    'X-GitHub-Api-Version': '2026-03-10'
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN
+});
+
+async function createRelease(owner, repo, tagName, releaseName, body) {
+  try {
+    const response = await octokit.repos.createRelease({
+      owner,
+      repo,
+      tag_name: tagName,
+      name: releaseName,
+      body: body,
+      draft: false,
+      prerelease: false
+    });
+    console.log("Release berhasil dibuat:", response.data.html_url);
+    return response.data;
+  } catch (error) {
+    console.error("Gagal buat release:", error.response?.data || error.message);
+    throw error;
   }
-})
+}
+
+// Contoh pemanggilan
+createRelease(
+  "liveajayah-droid",
+  "Build-bot",
+  "v1.0.0",
+  "Release v1.0.0",
+  "Deskripsi release"
+);
