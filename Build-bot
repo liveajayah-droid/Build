@@ -27,7 +27,7 @@ async function createRelease(owner, repo, tagName, releaseName, body) {
 // Contoh pemanggilan
 createRelease(
   "liveajayah-droid",
-  "Build-bot",
+  "Build",
   "v1.0.0",
   "Release v1.0.0",
   "Deskripsi release"
