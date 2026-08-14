@@ -21,7 +21,10 @@ jobs:
     steps:
       - name: Download source zip
         run: |
-          curl -L "${{ github.event.inputs.zip_url }}" -o source.zip
+          curl -L \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/octet-stream" \
+            "${{ github.event.inputs.zip_url }}" -o source.zip
           unzip -q source.zip -d source
 
       - name: Setup Flutter
@@ -35,6 +38,16 @@ jobs:
         working-directory: source
 
       - name: Build APK
+        run: flutter build apk --${{ github.event.inputs.build_type }}
+        working-directory: source
+
+      - name: Upload APK to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          files: source/build/app/outputs/flutter-apk/app-*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      - name: Build APK
         run: flutter build apk --${{ github.event.inputs.build_type }}
         working-directory: source
 
