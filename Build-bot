@@ -1,1 +1,13 @@
+// Octokit.js
+// https://github.com/octokit/core.js#readme
+const octokit = new Octokit({
+  auth: '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'
+})
 
+await octokit.request('GET /repos/{owner}/{repo}', {
+  owner: 'liveajayah-droid',
+  repo: 'Build-bot',
+  headers: {
+    'X-GitHub-Api-Version': '2026-03-10'
+  }
+})
