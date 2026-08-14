@@ -47,14 +47,4 @@ jobs:
           tag_name: ${{ github.event.inputs.tag }}
           files: source/build/app/outputs/flutter-apk/app-*.apk
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      - name: Build APK
-        run: flutter build apk --${{ github.event.inputs.build_type }}
-        working-directory: source
-
-      - name: Upload APK to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag }}
-          files: source/build/app/outputs/flutter-apk/app-*.apk
-        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
