@@ -5,6 +5,49 @@ const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN
 });
 
+/**
+ * Cek apakah repo sudah ada. Kalau belum, buat repo baru.
+ */
+async function ensureRepoExists(owner, repo) {
+  try {
+    const res = await octokit.repos.get({ owner, repo });
+    console.log(`Repo "${owner}/${repo}" sudah ada.`);
+    return res.data;
+  } catch (error) {
+    if (error.status === 404) {
+      console.log(`Repo "${owner}/${repo}" belum ada, membuat repo baru...`);
+      const res = await octokit.repos.createForAuthenticatedUser({
+        name: repo,
+        auto_init: true, // otomatis bikin commit awal (README) biar ada base buat release
+        private: false
+      });
+      console.log(`Repo "${owner}/${repo}" berhasil dibuat.`);
+      return res.data;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Cek apakah repo punya minimal 1 commit/branch.
+ * Kalau kosong total, createRelease akan gagal karena tidak ada base commit.
+ */
+async function ensureRepoHasCommit(owner, repo) {
+  try {
+    await octokit.repos.getBranch({ owner, repo, branch: "main" });
+    return true;
+  } catch (error) {
+    if (error.status === 404) {
+      console.log(`Repo "${owner}/${repo}" masih kosong (belum ada commit).`);
+      return false;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Buat release baru di repo.
+ */
 async function createRelease(owner, repo, tagName, releaseName, body) {
   try {
     const response = await octokit.repos.createRelease({
@@ -19,16 +62,47 @@ async function createRelease(owner, repo, tagName, releaseName, body) {
     console.log("Release berhasil dibuat:", response.data.html_url);
     return response.data;
   } catch (error) {
-    console.error("Gagal buat release:", error.response?.data || error.message);
+    console.error(
+      "Gagal buat release:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 }
 
+/**
+ * Alur lengkap: pastikan repo ada -> pastikan ada commit -> buat release.
+ */
+async function runFullFlow({ owner, repo, tagName, releaseName, body }) {
+  try {
+    await ensureRepoExists(owner, repo);
+
+    const hasCommit = await ensureRepoHasCommit(owner, repo);
+    if (!hasCommit) {
+      console.error(
+        `Repo "${owner}/${repo}" kosong. Push minimal 1 file/commit dulu sebelum bisa membuat release.`
+      );
+      return;
+    }
+
+    await createRelease(owner, repo, tagName, releaseName, body);
+  } catch (error) {
+    console.error("Alur gagal:", error.response?.data || error.message);
+  }
+}
+
 // Contoh pemanggilan
-createRelease(
-  "liveajayah-droid",
-  "Build",
-  "v1.0.0",
-  "Release v1.0.0",
-  "Deskripsi release"
-);
+runFullFlow({
+  owner: "liveajayah-droid",
+  repo: "Build",
+  tagName: "v1.0.0",
+  releaseName: "Release v1.0.0",
+  body: "Deskripsi release"
+});
+
+module.exports = {
+  ensureRepoExists,
+  ensureRepoHasCommit,
+  createRelease,
+  runFullFlow
+};
